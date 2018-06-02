@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.cheney.satisfy.dao.QuestionDao" >
+  <resultMap id="QuestionResult" type="Question" >
+    <id column="id" property="id" />
+    <result column="title" property="title" />
+    <result column="questionType" property="questionType" />
+    <result column="createBy" property="createBy" />
+    <result column="createTime" property="createTime" />
+    <result column="isDeleted" property="isDeleted" />
+    <collection property="answers" resultMap="AnswerResult" />
+  </resultMap>
+  <resultMap type="com.cheney.satisfy.model.Answer" id="AnswerResult">
+    <id column="aid" property="id" />
+    <result column="content" property="content" />
+    <result column="rightAnswer" property="rightAnswer" />
+  </resultMap>
+  
+  <sql id="Question_Column_List">
+    q.id, title, questionType, createBy, createTime, isDeleted
+  </sql>
+  <sql id="Answer_Column_List">
+    a.id aid, content, rightAnswer
+  </sql>
+  
+  <select id="getById" resultMap="QuestionResult" parameterType="int">
+    select 
+    <include refid="Question_Column_List" />,
+    <include refid="Answer_Column_List" />
+    from question q, answer a
+    where q.id = #{id}
+    and question_id = q.id
+    and isDeleted = false
+  </select>
+  
+  <select id="getByTitle" resultMap="QuestionResult" parameterType="String">
+    select 
+    <include refid="Question_Column_List" />,
+    <include refid="Answer_Column_List" />
+    from question q, answer a
+    where title like "%"#{title}"%"
+    and question_id = q.id
+    and isDeleted = false
+  </select>
+  
+  <select id="getByPage" resultMap="QuestionResult">
+    select 
+    <include refid="Question_Column_List" />
+    from question q
+    where isDeleted = false
+  </select>
+  
+  <insert id="addOne" parameterType="Question" useGeneratedKeys="true" keyProperty="id">
+    insert into question
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="title != null">
+        title,
+      </if>
+      <if test="questionType != null">
+        questionType,
+      </if>
+      <if test="createBy != null">
+        createBy,
+      </if>
+      <if test="createTime != null">
+        createTime,
+      </if>
+      <if test="isDeleted != null">
+        isDeleted,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="title != null">
+        #{title},
+      </if>
+      <if test="questionType != null">
+        #{questionType},
+      </if>
+      <if test="createBy != null">
+        #{createBy},
+      </if>
+      <if test="createTime != null">
+        #{createTime},
+      </if>
+      <if test="isDeleted != null">
+        #{isDeleted},
+      </if>
+    </trim>
+  </insert>
+  
+  <insert id="insertAnswers" parameterType="Question">
+    insert into answer (content, rightAnswer, question_id)
+    values 
+    <foreach collection="answers" item="answer" separator=",">
+        (#{answer.content}, #{answer.rightAnswer}, #{id})
+    </foreach>
+  </insert>
+  
+  <update id="updateOne" parameterType="Question">
+    update question
+    <set>
+      <if test="title != null">
+        title = #{title},
+      </if>
+      <if test="questionType != null">
+        questionType = #{questionType},
+      </if>
+      <if test="createBy != null">
+        createBy = #{createBy},
+      </if>
+      <if test="createTime != null">
+        createTime = #{createTime},
+      </if>
+      <if test="isDeleted != null">
+        isDeleted = #{isDeleted},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="updateAnswer" parameterType="Answer">
+    update answer
+    <set>
+      <if test="content != null">
+          content = #{content},
+      </if>
+      <if test="rightAnswer != null">
+          rightAnswer = #{rightAnswer},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="deleteByIds" parameterType="int">
+    update question
+    set isDeleted = true
+    where id = #{id}
+    <!-- 
+    <foreach collection="array" index="index" item="ids" open="(" separator="," close=")">
+        #{ids}
+    </foreach>
+     -->
+  </update>
+     
+  <!-- 
+  <select id="getAllUser" resultMap="UserResult">
+    select
+    <include refid="Base_Column_List" />
+    from user
+  </select>
+  <delete id="deleteByIds">
+    update user
+    set isDeleted = 1
+    where id in
+    <foreach collection="array" index="index" item="ids" open="(" separator="," close=")">
+        #{ids}
+    </foreach>
+  </delete>
+  <insert id="insert" parameterType="com.cheney.satisfy.model.User" >
+    insert into user (id, username, password, name, gender, birthday, phone, email, createBy, createTime, isDeleted)
+    values (#{id}, #{username}, #{password}, #{name}, #{gender}, #{birthday},
+    #{phone}, #{email}, #{createBy}, #{createTime}, #{isDeleted})
+  </insert>
+  <insert id="insertSelective" parameterType="com.cheney.satisfy.model.User" >
+    insert into user
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="userName != null" >
+        user_name,
+      </if>
+      <if test="password != null" >
+        password,
+      </if>
+      <if test="phone != null" >
+        phone,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="userName != null" >
+        #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null" >
+        #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null" >
+        #{phone,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.winter.model.User" >
+    update t_user
+    <set >
+      <if test="userName != null" >
+        user_name = #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null" >
+        password = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null" >
+        phone = #{phone,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where user_id = #{userId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.winter.model.User" >
+    update t_user
+    set user_name = #{userName,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=VARCHAR}
+    where user_id = #{userId,jdbcType=INTEGER}
+  </update>
+   -->
+</mapper>

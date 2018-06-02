@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.cheney.satisfy.dao.PaperDao" >
+  <resultMap id="PaperResult" type="Paper" >
+    <id column="pid" property="id" />
+    <result column="name" property="name" />
+    <result column="number" property="number" />
+    <result column="name" property="name" />
+    <result column="createBy" property="createBy" />
+    <result column="createTime" property="createTime" />
+    <result column="isDeleted" property="isDeleted" />
+    <collection property="questions" resultMap="QuestionResult"></collection>
+  </resultMap>
+  <resultMap id="QuestionResult" type="Question" >
+    <id column="qid" property="id" />
+    <result column="title" property="title" />
+    <result column="questionType" property="questionType" />
+    <result column="createBy" property="createBy" />
+    <result column="createTime" property="createTime" />
+    <result column="isDeleted" property="isDeleted" />
+    <collection property="answers" resultMap="AnswerResult" />
+  </resultMap>
+  <resultMap type="com.cheney.satisfy.model.Answer" id="AnswerResult">
+    <id column="aid" property="id" />
+    <result column="content" property="content" />
+    <result column="rightAnswer" property="rightAnswer" />
+  </resultMap>
+  
+  <sql id="Paper_Column_List">
+    p.id pid, name, number, p.createBy, p.createTime, p.isDeleted
+  </sql>
+  <sql id="Question_Column_List">
+    q.id qid, title, questionType
+  </sql>
+  <sql id="Answer_Column_List">
+    a.id aid, content, rightAnswer
+  </sql>
+  
+  <select id="getByPage" resultMap="PaperResult">
+    select 
+    <include refid="Paper_Column_List" />
+    from paper p
+    where isDeleted = false
+  </select>
+  
+  <select id="getById" resultMap="PaperResult" parameterType="int">
+    select 
+    <include refid="Paper_Column_List" />,
+    <include refid="Question_Column_List" />,
+    <include refid="Answer_Column_List" />
+    from paper p, question q, paper_question pq, answer a
+    where p.id = #{id}
+    and p.id = pq.paper_id
+    and q.id = pq.question_id
+    and a.question_id = q.id
+    and p.isDeleted = false
+  </select>
+  
+  <select id="getQuestionByRandom" resultMap="QuestionResult" parameterType="int">
+    select 
+    <include refid="Question_Column_List" />
+    from question q
+    where isDeleted = false
+    ORDER BY rand() LIMIT #{number};
+  </select>
+  
+  <select id="getAnswerByQuestion" resultMap="QuestionResult" parameterType="int">
+    select 
+    <include refid="Answer_Column_List" />
+    from answer a
+    where question_id = #{id}
+  </select>
+  
+  <insert id="addOne" parameterType="Paper" useGeneratedKeys="true" keyProperty="id">
+    insert into paper
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="name != null">
+        name,
+      </if>
+      <if test="number != null">
+        number,
+      </if>
+      <if test="createBy != null">
+        createBy,
+      </if>
+      <if test="createTime != null">
+        createTime,
+      </if>
+      <if test="isDeleted != null">
+        isDeleted,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="name != null">
+        #{name},
+      </if>
+      <if test="number != null">
+        #{number},
+      </if>
+      <if test="createBy != null">
+        #{createBy},
+      </if>
+      <if test="createTime != null">
+        #{createTime},
+      </if>
+      <if test="isDeleted != null">
+        #{isDeleted},
+      </if>
+    </trim>
+  </insert>
+  
+  <insert id="insertPaperQuestion" parameterType="int">
+    insert into paper_question (paper_id, question_id) values (#{param1}, #{param2})
+  </insert>
+  
+</mapper>

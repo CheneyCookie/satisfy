@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.cheney.satisfy.dao.UserDao" >
+  <resultMap id="UserResult" type="User" >
+    <id column="id" property="id" />
+    <result column="username" property="username" />
+    <result column="password" property="password" />
+    <result column="name" property="name" />
+    <result column="gender" property="gender" />
+    <result column="birthday" property="birthday" />
+    <result column="phone" property="phone" />
+    <result column="email" property="email" />
+    <result column="isDeleted" property="isDeleted" />
+    <result column="createBy" property="createBy" />
+    <result column="createTime" property="createTime" />
+    <association property="role" resultMap="RoleResult" />
+  </resultMap>
+  <resultMap type="com.cheney.satisfy.model.Role" id="RoleResult">
+    <id column="rid" property="id" />
+    <result column="rname" property="name" />
+    <collection property="permissions" resultMap="PermissionResult" />
+  </resultMap>
+  <resultMap type="com.cheney.satisfy.model.Permission" id="PermissionResult">
+    <id column="pid" property="id" />
+    <result column="pname" property="name" />
+  </resultMap>
+  
+  <sql id="User_Column_List">
+    u.id, username, password, u.name, gender, birthday, phone, email, createBy, createTime, isDeleted, u.role_id
+  </sql>
+  <sql id="Role_Column_List">
+    r.id rid, r.name rname
+  </sql>
+  <sql id="Role_Permission">
+    rp.role_id, rp.permission_id
+  </sql>
+  <sql id="Permission_Column_List">
+    p.id pid, p.name pname
+  </sql>
+  
+  <select id="getById" resultMap="UserResult" parameterType="int">
+    select 
+    <include refid="User_Column_List" />,
+    <include refid="Role_Column_List" />,
+    <include refid="Role_Permission" />,
+    <include refid="Permission_Column_List" />
+    from user u, role r, role_permission rp, permission p
+    where u.id = #{id}
+    and u.role_id = r.id
+    and r.id = rp.role_id
+    and rp.permission_id = p.id
+    and isDeleted = false
+  </select>
+  
+  <select id="getByUserNameOrEmail" resultMap="UserResult" parameterType="String">
+    select 
+    <include refid="User_Column_List" />,
+    <include refid="Role_Column_List" />,
+    <include refid="Role_Permission" />,
+    <include refid="Permission_Column_List" />
+    from user u, role r, role_permission rp, permission p
+    where (u.username = #{username} or u.email = #{username})
+    and u.role_id = r.id
+    and r.id = rp.role_id
+    and rp.permission_id = p.id
+    and isDeleted = false
+  </select>
+
+  <select id="getByPage" resultMap="UserResult">
+    select 
+    <include refid="User_Column_List" />,
+    <include refid="Role_Column_List" />
+    from user u, role r
+    where u.role_id = r.id
+    and isDeleted = false
+  </select>
+  
+  <insert id="addOne" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+    insert into user
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="username != null">
+        username,
+      </if>
+      <if test="password != null">
+        password,
+      </if>
+      <if test="name != null">
+        name,
+      </if>
+      <if test="gender != null">
+        gender,
+      </if>
+      <if test="birthday != null">
+        birthday,
+      </if>
+      <if test="phone != null">
+        phone,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="createBy != null">
+        createBy,
+      </if>
+      <if test="createTime != null">
+        createTime,
+      </if>
+      <if test="isDeleted != null">
+        isDeleted,
+      </if>
+        role_id,
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="username != null">
+        #{username},
+      </if>
+      <if test="password != null">
+        #{password},
+      </if>
+      <if test="name != null">
+        #{name},
+      </if>
+      <if test="gender != null">
+        #{gender},
+      </if>
+      <if test="birthday != null">
+        #{birthday},
+      </if>
+      <if test="phone != null">
+        #{phone},
+      </if>
+      <if test="email != null">
+        #{email},
+      </if>
+      <if test="createBy != null">
+        #{createBy},
+      </if>
+      <if test="createTime != null">
+        #{createTime},
+      </if>
+      <if test="isDeleted != null">
+        #{isDeleted},
+      </if>
+        #{role.id},
+    </trim>
+  </insert>
+  
+  <update id="updateOne" parameterType="User">
+    update user
+    <set >
+      <if test="username != null">
+        username = #{username},
+      </if>
+      <if test="password != null">
+        password = #{password},
+      </if>
+      <if test="name != null">
+        name = #{name},
+      </if>
+      <if test="gender != null">
+        gender = #{gender},
+      </if>
+      <if test="birthday != null">
+        birthday = #{birthday},
+      </if>
+      <if test="phone != null">
+        phone = #{phone},
+      </if>
+      <if test="email != null">
+        email = #{email},
+      </if>
+      <if test="createBy != null">
+        createBy = #{createBy},
+      </if>
+      <if test="role.id != null">
+        role_id = #{role.id},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="deleteByIds">
+    update user
+    set isDeleted = true
+    where id in
+    <foreach collection="array" index="index" item="ids" open="(" separator="," close=")">
+        #{ids}
+    </foreach>
+  </update>
+  
+  <!-- 
+  <select id="getAllUser" resultMap="UserResult">
+    select
+    <include refid="Base_Column_List" />
+    from user
+  </select>
+  <delete id="deleteByIds">
+    update user
+    set isDeleted = 1
+    where id in
+    <foreach collection="array" index="index" item="ids" open="(" separator="," close=")">
+        #{ids}
+    </foreach>
+  </delete>
+  <insert id="insert" parameterType="com.cheney.satisfy.model.User" >
+    insert into user (id, username, password, name, gender, birthday, phone, email, createBy, createTime, isDeleted)
+    values (#{id}, #{username}, #{password}, #{name}, #{gender}, #{birthday},
+    #{phone}, #{email}, #{createBy}, #{createTime}, #{isDeleted})
+  </insert>
+  <insert id="insertSelective" parameterType="com.cheney.satisfy.model.User" >
+    insert into user
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="userName != null" >
+        user_name,
+      </if>
+      <if test="password != null" >
+        password,
+      </if>
+      <if test="phone != null" >
+        phone,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="userName != null" >
+        #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null" >
+        #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null" >
+        #{phone,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.winter.model.User" >
+    update t_user
+    <set >
+      <if test="userName != null" >
+        user_name = #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null" >
+        password = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null" >
+        phone = #{phone,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where user_id = #{userId,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.winter.model.User" >
+    update t_user
+    set user_name = #{userName,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=VARCHAR}
+    where user_id = #{userId,jdbcType=INTEGER}
+  </update>
+   -->
+</mapper>
